@@ -1,0 +1,10 @@
+pipeline {
+    agent any
+    stages {
+        stage('Build Docker') {
+            steps {
+                step([$class: 'DockerComposeBuilder', dockerComposeFile: 'docker-compose.yml', option: [$class: 'StartAllServices'], useCustomDockerComposeFile: true])
+            }
+        }
+    }
+}

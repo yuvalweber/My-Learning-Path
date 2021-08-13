@@ -1,0 +1,23 @@
+pipeline {
+    agent {label 'ansible'}
+    options {
+        ansiColor('xterm')
+    }
+
+    stages {
+        stage('Running playbook') {
+            steps {
+                ansiblePlaybook(
+                    become: true, 
+                    colorized: true, 
+                    credentialsId: 'root_password', 
+                    playbook: '/etc/ansible/playbooks/playbook_example.yml',
+                    extraVars: [
+                        var1: "bdika",
+                        var2: "bdika2",
+                    ]
+                )
+            }
+        }
+    }
+}

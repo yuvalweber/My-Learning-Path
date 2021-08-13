@@ -1,0 +1,24 @@
+version: '3'
+services: 
+  gitlab:
+    image: "gitlab/gitlab-ee:latest"
+    hostname: "gitlab.example.com"
+    container_name: "gitlab-container"
+    ports:
+      - "8090:80"      
+    networks: 
+      - devopsnet
+    restart: always
+  
+  jenkins:
+    image: jenkins/jenkins
+    hostname: "jenkins.example.com"
+    container_name: "jenkins-container"
+    ports: 
+      - "8080:8080"
+    networks: 
+      - devopsnet
+    restart: always
+
+networks: 
+  devopsnet:

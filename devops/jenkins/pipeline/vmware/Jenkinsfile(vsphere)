@@ -1,0 +1,40 @@
+pipeline {
+    agent {label 'vsphere'}
+    stages {
+        stage('snapshot operations') {
+            steps {
+                // delete snapshot
+                step([$class:'DeleteSnapshot',vm: 'vmName',snapshotName: 'snapName'])
+                // rename snapshot
+                step([$class:'RenameSnapshot',vm: 'vmName',oldName: 'snapName', newName: 'snapNameNew',newDescription: 'new'])
+                // revert to snapshot
+                step([$class:'RevertToSnapshot',vm: 'vmName',snapshotName: 'snapName'])
+                // take snapshot
+                step([$class:'TakeSnapshot',vm: 'vmName',snapshotName: 'snapName', description: 'for you',includeMemory: true])
+
+            }
+        }
+        stage('VM Operations') {
+            steps {
+                // deploy vm from template
+                step([$class: 'Deploy', template: 'RedHat 7.6', clone: 'newVm',cluster: 'Cluster01', datastore: 'DS01',powerOn: true])
+                // clone a vm
+                step([$class: 'VSphereBuildStepContainer',buildStep: [$class: 'Clone',sourceName: 'newVm',clone: 'newVmNew',cluster: 'Cluster01',datastore: 'DS01',powerOn: true,custeomizationSpec: 'my-custom'],serverName: 'vsphere'])
+                // show vm info
+                step([$class: 'ExposeGuestInfo', vm: 'VmName']
+                // poweroff vm
+                step([$class: 'PowerOff', vm: 'VmName']
+                // poweron vm
+                step([$class: 'VSphereBuildStepContainer',buildStep: [$class: 'PowerOn',vm: 'newVm'],serverName: 'vsphere'])
+                // suspend vm
+                step([$class: 'SuspendVm', vm: 'VmName']
+                // Rename vm
+                step([$class: 'Rename', oldName: 'VmName', newName: 'VmNameNew']
+                // reconfigure vm
+                step([$class: 'Reconfigure', vm: 'VmName',reconfigureSteps: [$class:'ReconfigureMemory',memorySize: '8192']]
+                // delete vm
+                step([$class: 'VSphereBuildStepContainer',buildStep: [$class: 'Delete',vm: 'newVm'],serverName: 'vsphere'])
+            }
+        }
+    }
+}

@@ -1,0 +1,7 @@
+FROM python:3.8-alpine as builder
+RUN  mkdir /usr/packages && \
+     pip3 install tox --target=/usr/packages
+
+
+FROM python:3.8-alpine 
+COPY --from=builder /usr/packages/ /usr/local/lib/python3.8/site-packages/

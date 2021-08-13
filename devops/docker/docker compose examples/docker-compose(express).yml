@@ -1,0 +1,18 @@
+version: '3'
+services:
+  rest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rest:1.0
+    container_name: rest_container
+    depends_on:
+      - mongo
+    ports:
+      - 80:80
+    restart: always
+  
+  mongo:
+    image: mongo:latest
+    container_name: Mongo
+    restart: always

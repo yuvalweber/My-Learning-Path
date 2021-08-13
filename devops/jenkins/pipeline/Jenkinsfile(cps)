@@ -1,0 +1,21 @@
+@NonCPS 
+def echo_something(msg) {
+        echo msg
+}
+
+pipeline {
+    agent any
+    options {
+        ansiColor('xterm')
+    }
+    parameters {
+        string(name: 'msg', defaultValue: 'bdika', description: 'Message to print')
+    }
+    stages {
+        stage('printing something with cps') {
+            steps {
+                echo_something(params.msg)
+            }
+        }
+    }
+}

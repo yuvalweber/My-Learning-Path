@@ -1,0 +1,18 @@
+version: '3'
+services:
+  todolist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: todolist:1.0
+    container_name: node_server
+    depends_on:
+      - mongo
+    ports:
+      - 80:80
+    restart: always
+
+  mongo:
+    image: mongo:latest
+    container_name: Mongo
+    restart: always

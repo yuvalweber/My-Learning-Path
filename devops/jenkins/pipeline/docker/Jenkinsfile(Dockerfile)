@@ -1,0 +1,17 @@
+// if Dockerfile in the current directory
+pipeline
+{
+    agent {
+        dockerfile {
+            filename 'Dockerfile'
+            dir '.'
+        }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'echo running :)'
+            }
+        }
+    }
+
+}

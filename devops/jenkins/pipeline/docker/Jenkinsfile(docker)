@@ -1,0 +1,18 @@
+pipeline
+{
+    agent any
+    stages {
+        stage('Build') {
+            agent {
+                docker {
+                    image 'jenkins/jenkins'
+                    args '-v /var/jenkins_home:/var/jenkins_home'
+                }
+            }
+            steps {
+                sh 'echo running :)'
+            }
+        }
+    }
+
+}

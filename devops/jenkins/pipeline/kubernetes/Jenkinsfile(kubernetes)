@@ -1,0 +1,33 @@
+pipeline {
+    agent {
+        kubernetes {
+            label Podlabel
+            yaml """
+            kind: Pod
+            metadata:
+              name: jenkins-agent
+            spec:
+              containers:
+              - name: yuval
+                image: dockerhub.io/yuval/nginx
+                imagePullPolicy: Always
+                command:
+                - /busybox/id
+                tty: true
+                volumeMounts:
+                  - name: aws-secret
+                    mountPath: /root/.aws
+                  - name: docker-registry-config
+                    mountPath: /root/.docker
+            restartPolicy: Never
+            volumes:
+              - name: aws-secret
+                secret:
+                  secretName: aws-secret
+              - name: docker-registry-config
+                configMap:
+                  name: docker-registry-config
+            """
+        }
+    }
+}

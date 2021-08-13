@@ -1,0 +1,15 @@
+pipeline {
+    agent {
+        kubernetes {
+            cloud 'kubernetes'
+            defaultContainer 'jnlp'
+        }
+    }
+    stages {
+        stage('Deploy App') {
+            steps {
+                kubernetesDeploy(configs: "template.yml", kubeconfigId: "MINIKUBECONFIG")
+            }
+        }
+    }
+}

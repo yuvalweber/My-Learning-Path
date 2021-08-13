@@ -1,0 +1,25 @@
+job('example_dsl') {
+    description('this is a test')
+
+    parameters {
+        stringParam('Plant',defaultValue = 'world', description = 'this is test')
+        booleanParam('FLAG',true)
+        choiceParam('OPTION',['option 1 (default)','option 2','option 3'])
+    }
+
+    scm {
+        git("https://github.com/yuvalweber/WolfCrack.git","master")
+    }
+
+    triggers {
+        cron('H 5 * * 7')
+    }
+
+    steps {
+        shell("echo 'hello world'")
+    }
+
+    publishers {
+        mailer("yuval199985@gmail.com",true,true)
+    }
+}

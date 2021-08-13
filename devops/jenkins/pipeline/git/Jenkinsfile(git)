@@ -1,0 +1,10 @@
+pipeline {
+    agent any
+    stages {
+        stage('pull from git') {
+            steps {
+                git branch: 'development', credentialsId: 'GitCreds', url: 'https://github.com/yuvalweber/WinrmTool.git'
+            }
+        }
+    }
+}

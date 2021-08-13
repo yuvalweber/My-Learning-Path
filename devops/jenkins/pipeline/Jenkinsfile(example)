@@ -1,0 +1,144 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'Server', defaultValue: 'ansible', description: 'Server Name')
+        text(name: 'City', defaultValue: 'Givat Shmuel', description: 'City to insert')
+        booleanParam(name: 'GOOD', defaultValue: true, description: "is it good?")
+        choice(name: 'CHOICE',choices: ['One','Two'],description: 'Pick your choice?')
+        password(name: 'PASSWORD',defaultValue:'SECRET',description: 'your password')
+    }
+
+    environment {
+        NAME = 'yuval'
+        LASTNAME = 'weber'
+        secret = credentials('TEST')
+    }
+
+    triggers {
+        cron('H */4 * * 1-5')
+    }
+
+    stages {
+        stage('Retry and inputs') {
+            // ask for user input
+            input {
+                message "prompt for message"
+                ok "submit"
+            }
+
+            steps {
+                retry(3) {
+                    echo 'Building....'
+                    // printing parameters
+                    echo '${params.CHOICE}'
+                }
+            }
+        }
+        stage('Parameters, timeout, mail and build job example') {
+            
+            // conditionals
+            when {
+                expression {${params.CHOICE} == "One"}
+            }
+
+            steps {
+                timeout(time: 3, unit: 'SECONDS') {
+                    echo 'Testing...'
+
+                    // sending mail example
+                    mail body: 'check your email', subject: 'This is important', to: 'yuval199985@gmail.com'
+                    // build job
+                    build 'testJob', parameters: [string(name:'test',value:'3')]
+                }
+            }
+        }
+        stage('loop example') {
+            steps {
+                echo 'Deploying...'
+                // script pipeline
+                script {
+                    def x = 5
+                    def browsers = ['Chrome','firefox']
+                    for (int i = 0 ; i < browsers.size() ; ++i) {
+                        echo "Testing ${browsers[i]}"
+                    }
+                    // conditions like that only work on scripted
+                    if(x == 5) {
+                        echo 'worked'
+                    }
+                }
+            }
+        }
+
+        stage('File Commands') {
+            steps {
+                // delete directory
+                deleteDir("/root/test")
+                // print current dir
+                pwd()
+                // change directory
+                dir('/root/testing') {
+
+                }
+                // check if file exist
+                fileExists '/root/exist'
+                // read file
+                readFile '/root/file_to_read'
+                // write file 
+                writeFile file: '/root/testFile', text: 'danidin'
+                // create file
+                touch file: '/root/newFile'
+                
+                script {
+                    try {
+                        def  files = findFiles(glob: '**/TEST-*.xml') 
+                        echo 'name: ${files[0].name}\npath: ${files[0].path}'
+                        echo 'directory: ${files[0].directory}\nlength: ${files[0].length}'
+                        echo 'last modified: ${files[0].lastModified}'
+                        
+                        // read csv
+                        def records = readCSV file: '/root/try.csv'
+                        // read csv in excel format
+                        def excelFormat = CSVFormat.Excel
+                        def excel = readCSV file: '/root/try.csv', format: excelFormat
+                        // write to csv
+                        writeCSV file: '/root/newCsv.csv',records: records, format: CSVFormat.ExcelFormat
+
+                        // read json
+                        def props = readJSON file: '/root/try.json'
+                        // read pure json
+                        def props = readJSON text: '{"key": "value"}'
+                        // read array using json
+                        def props = readJSON text: '["a","b"]'
+                        // write to json
+                        writeJSON file: '/root/newJson.json', json: props 
+
+                        // read yaml
+                        def data = readYaml file: '/root/try.yml'
+                        // write yaml
+                        writeYaml file: '/root/newYaml.yml' data: data
+                    }
+                    catch(exception) {
+                        echo 'catched! ${exception}'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'always'
+        }
+        success {
+            echo 'success'
+        }
+        failure {
+            echo 'failure'
+        }
+        unstable {
+            echo 'unstable'
+        }
+    }
+}

