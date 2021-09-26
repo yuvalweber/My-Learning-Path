@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: myapp-ReplicaSet
+  labels:
+    app: myapp
+spec:
+  # how many pods to run
+  replicas: 2
+  template:
+    metadata:
+      name: myapp-pod
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: nginxApp
+          image: nginx
+  selector:
+    # define who is part of the replicaSet
+    matchLabels:
+      app: myapp
+
+    

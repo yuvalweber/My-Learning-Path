@@ -149,4 +149,16 @@ kubectl rollout status deployments/<name>
 kubectl rollout undo deployments/<name>
 ```
 
+18) output the command to yaml file
+```
+kubectl run redis --image=redis --dry-run=client -o yaml > definition.yml
+```
+
+19) change current working namespace
+```
+kubectl config set-context $(kubectl config current-context) --namespace=dev
+```
+
+
+
 
