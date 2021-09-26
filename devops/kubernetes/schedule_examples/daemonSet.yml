@@ -1,0 +1,17 @@
+# make sure one pod of something run on any node in the cluster
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: monitor
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: monitor-agent
+          image: monitoring

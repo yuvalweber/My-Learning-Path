@@ -1,3 +1,4 @@
+# limits the namespace
 apiVersion: v1
 kind: ResourceQuota
 metadata:

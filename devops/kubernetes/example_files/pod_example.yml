@@ -9,7 +9,12 @@ spec:
   containers:
   - name: nginxApp
     image: nginx
+    command: ["sleep"]
+    args: ["1000"]
     resources:
+      requests:
+        cpu: "125m"
+        memory: "100mi"
       limits:
         memory: "128Mi"
         cpu: "500m"

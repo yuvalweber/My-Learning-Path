@@ -16,6 +16,10 @@
 represent a collection of containers that share resources (ip,storage)  
 there are couple of pods inside a node.
 
+(you can create static pods by putting a definition file in the StaticPod folder.
+
+you can find out where it is by looking at the config file located in /var/lib/kubelet/config.yaml on the node).
+
 <br>
 
 ## <ins>Replica Set</ins>
@@ -96,7 +100,7 @@ kubectl describe <resource>
 
 7) show logs  
 ```
-kubectl logs <pod_name>
+kubectl logs <pod_name> <container_name>
 ```
 
 8) execute command on pod  
@@ -158,6 +162,23 @@ kubectl run redis --image=redis --dry-run=client -o yaml > definition.yml
 ```
 kubectl config set-context $(kubectl config current-context) --namespace=dev
 ```
+
+20) taint a node
+```
+kubectl taint nodes <node_name> key=value:NoSchedule
+```
+
+21) show all the option for creating a resource
+```
+kubectl explain pod --recursive | less
+```
+
+22) output saved configuration to file
+```
+kubectl get deployment <example> -o yaml > file.yaml
+```
+
+
 
 
 
