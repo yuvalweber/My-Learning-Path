@@ -97,6 +97,15 @@ pipeline {
                         echo 'directory: ${files[0].directory}\nlength: ${files[0].length}'
                         echo 'last modified: ${files[0].lastModified}'
                         
+                        // parallel
+                        def examples = [:]
+                        examples['mac'] = {
+                            echo "build for mac"
+                        }
+                        examples['windows'] = {
+                            echo "build for windows"
+                        }
+                        parallel(examples)
                         // read csv
                         def records = readCSV file: '/root/try.csv'
                         // read csv in excel format
