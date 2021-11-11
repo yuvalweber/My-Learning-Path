@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 pipeline {
     agent any
 
@@ -106,6 +107,12 @@ pipeline {
                             echo "build for windows"
                         }
                         parallel(examples)
+
+                        // http request example
+                        // we imported the json slurper for that.
+                        def response = httpRequest 'https://www.yuvalweber.com/json'
+                        def json = new JsonSlurper().parseText(response.content)
+                        
                         // read csv
                         def records = readCSV file: '/root/try.csv'
                         // read csv in excel format
