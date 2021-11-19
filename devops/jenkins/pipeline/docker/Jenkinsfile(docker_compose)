@@ -1,6 +1,14 @@
+// used for using docker-compose in builds.
+// you must have docker-compose installed on your agent 
+// docker-compose.yml should be in your workspace
 pipeline {
-    agent any
+    agent {label 'docker_slave'}
     stages {
+        stage('copy file to workspace'){
+            steps{
+                sh 'cp /root/docker-compose.yml /root/workspace/docker-compose/docker-compose.yml'
+            }
+        }
         stage('Build Docker') {
             steps {
                 step([$class: 'DockerComposeBuilder', dockerComposeFile: 'docker-compose.yml', option: [$class: 'StartAllServices'], useCustomDockerComposeFile: true])

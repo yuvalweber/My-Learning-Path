@@ -1,18 +1,20 @@
+// if Dockerfile in the current directory
+// you must have docker installed on your agent 
 pipeline
 {
-    agent any
+    agent {
+        dockerfile {
+             // label is needed in order to show on which agent the docker would run.
+            label 'docker_slave'
+            filename 'Dockerfile'
+            dir '/'
+        }
+    }
     stages {
         stage('Build') {
-            agent {
-                docker {
-                    image 'jenkins/jenkins'
-                    args '-v /var/jenkins_home:/var/jenkins_home'
-                }
-            }
             steps {
-                sh 'echo running :)'
+                sh 'echo ${FILE}'
             }
         }
     }
-
 }

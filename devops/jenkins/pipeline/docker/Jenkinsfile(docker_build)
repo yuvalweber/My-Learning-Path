@@ -1,7 +1,10 @@
-node {
+// used for building image and running test on container.
+// you must have docker installed on your agent 
+node('jenkins_slave') {
     checkout scm
+    // test is a directory!
     def testImage = docker.build("test-image", "./dockerfiles/test") 
-
+    // if you are using docker in docker you will need to have mounted volume with docker and the host.
     testImage.inside {
         sh 'make test'
     }

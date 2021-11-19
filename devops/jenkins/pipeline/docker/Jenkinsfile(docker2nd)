@@ -1,13 +1,15 @@
-node {
-    checkout scm
+// this is used for running docker container and test if it is working.
+// you must have docker installed on your agent 
+// you must have docker installed on your agent 
+node('jenkins_slave') {
     /*
      * In order to communicate with the MySQL server, this Pipeline explicitly
      * maps the port (`3306`) to a known port on the host machine.
      */
-    docker.image('mysql:5').withRun('-e "MYSQL_ROOT_PASSWORD=my-secret-pw" -p 3306:3306') { c ->
+    docker.image('mysql:5').withRun('-e "MYSQL_ROOT_PASSWORD=my-secret-pw" -p 3306:3306 --net=jenkins') { c ->
         /* Wait until mysql service is up */
-        sh 'while ! mysqladmin ping -h0.0.0.0 --silent; do sleep 1; done'
+        sh 'while ! nc 172.20.0.4 3306 ; do sleep 1; done'
         /* Run some tests which require MySQL */
-        sh 'make check'
+        sh 'mysql -h 172.20.0.4 -uroot -pmy-secret-pw -e "select schema_name from information_schema.schemata"'
     }
 }

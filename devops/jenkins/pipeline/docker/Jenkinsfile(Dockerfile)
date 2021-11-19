@@ -1,8 +1,11 @@
 // if Dockerfile in the current directory
+// you must have docker installed on your agent 
 pipeline
 {
     agent {
         dockerfile {
+             // label is needed in order to show on which agent the docker would run.
+            label 'docker_slave'
             filename 'Dockerfile'
             dir '.'
         }
