@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -6,56 +7,93 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <elf.h>
+#include "helperFunctions.h"
 
 int main(int argc, char* argv[])
 {
-    char *new_argv[] = {NULL};
+    char *new_argv[] = {argv[1],NULL};
     char *new_envp[] = {NULL};
     struct user_regs_struct regs;
     struct user_regs_struct rc;
     int status;
-
-    //checking if there are enough arguments
+    char* new_path;
+    bool need_to_free = false;
+    bool is32 = false;
+    Elf64_Ehdr header;
+    // checking if there are enough arguments
     if (argc != 2)
     {
-        printf("usage: strace <path_to_executable>\n");
+        printf("usage: %s <path_to_executable>\n",argv[0]);
         return(0);
     }
 
+    // find if executable is in path environment variable
+    if(fopen(argv[1],"r") != NULL)
+    {
+        new_path = argv[1];
+    }
     else
     {
-        pid_t child = fork();
-
-        //child process
-        if(child == 0)
+        new_path = isInPath(argv[1]);
+        if(new_path == NULL)
         {
-            //pid addr and data are ignored because the parent is tracing him
-            ptrace(PTRACE_TRACEME,0,NULL,NULL);
-            execve(argv[1],new_argv,new_envp);
-            // if execve returns it mean it failed
-            perror("execve");
-            return(1);
+            printf("%s",strerror(2));
+            exit(1);
         }
+        need_to_free = true;
+    }
 
-        //fork failed
-        else if(child == -1)
-        {
-            perror("fork");
-            return(1);
-        }
+    //check if elf and executable and check if 64 or 32 bit.
+    FILE* file = fopen(new_path,'rb');
+    fread(&header,sizeof(header),1,file);
+    if(!(memcmp(header.e_ident,ELFMAG,SELFMAG) == 0 || header.e_type == ET_EXEC))
+    {
+        printf("%s","file is not executable or not elf format");
+        exit(1);
+    }
+    if(header.e_ident[EI_CLASS] == ELFCLASS32)
+    {
+        is32 = true;
+    }
 
-        //parent process
-        else
+    
+    pid_t child = fork();
+    //child process
+    if(child == 0)
+    {
+        //pid addr and data are ignored because the parent is tracing him
+        ptrace(PTRACE_TRACEME,0,NULL,NULL);
+        execve(new_path,new_argv,new_envp);
+        // if execve returns it mean it failed
+        perror("execve");
+        return(1);
+    }
+
+    //fork failed
+    else if(child == -1)
+    {
+        perror("fork");
+        return(1);
+    }
+
+    //parent process
+    else
+    {
+        wait(&status);           
+	    while(!WIFEXITED(status))
+	    {
+            ptrace(PTRACE_SYSCALL,child,NULL,NULL);
+		    wait(&status);
+            ptrace(PTRACE_GETREGS,child,NULL,&regs);
+        	ptrace(PTRACE_SYSCALL,child,NULL,NULL);
+		    wait(&status);
+            ptrace(PTRACE_GETREGS,child,NULL,&rc);
+            fprintf(stderr,"%lld(0x%llx,0x%llx,0x%llx) = 0x%llx\n",regs.orig_rax,regs.rdi,regs.rsi,regs.rdx,rc.rax);
+	    }
+        if(need_to_free)
         {
-            wait(&status);           
-            while(status == 1407)
-            {
-                ptrace(PTRACE_GETREGS,child,NULL,&regs);
-                ptrace(PTRACE_SYSCALL,child,NULL,NULL);
-                ptrace(PTRACE_GETREGS,child,NULL,&rc);
-                printf("%lld(%lld,%lld,%lld) = %lld\n",regs.orig_rax,regs.rbx,regs.rcx,regs.rdx,rc.orig_rax);
-                wait(&status);
-            }
+            free(new_path);
         }
     }
 }

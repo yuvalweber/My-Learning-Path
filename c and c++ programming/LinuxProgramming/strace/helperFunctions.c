@@ -1,12 +1,3 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/ptrace.h>
-#include <sys/user.h>
-#include <errno.h>
-
-//FixMe: maybe vulnerable to buffer overflow
 char* isInPath(char* program_name)
 {
     char* path = getenv("PATH");
@@ -23,14 +14,11 @@ char* isInPath(char* program_name)
         }
         splittedPath = strtok(NULL,":");
     }
-    char* error_to_print = strerror(2);
-    printf("%s",error_to_print);
-    exit(1);
+    free(path_to_check);
+    return NULL;
 }
 
-int main(int argc, char* argv[])
+char* syscallName64(int syscallNumber)
 {
-    char* path = isInPath(argv[1]);
-    printf("%s",path);
-    free(path);
+    
 }
