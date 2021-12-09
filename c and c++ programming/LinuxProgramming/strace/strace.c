@@ -21,6 +21,7 @@ int main(int argc, char* argv[])
     bool need_to_free = false;
     bool is32 = false;
     Elf64_Ehdr header;
+    char* syscallName;
     // checking if there are enough arguments
     if (argc != 2)
     {
@@ -86,10 +87,12 @@ int main(int argc, char* argv[])
             ptrace(PTRACE_SYSCALL,child,NULL,NULL);
 		    wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&regs);
+            //FixMe: add here a one line if statement
+            syscallName = is32 ? syscallName32((int)regs.orig_rax) : syscallName64((int)regs.orig_rax);
         	ptrace(PTRACE_SYSCALL,child,NULL,NULL);
 		    wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&rc);
-            fprintf(stderr,"%lld(0x%llx,0x%llx,0x%llx) = 0x%llx\n",regs.orig_rax,regs.rdi,regs.rsi,regs.rdx,rc.rax);
+            fprintf(stderr,"%s(0x%llx,0x%llx,0x%llx) = 0x%llx\n",syscallName,regs.rdi,regs.rsi,regs.rdx,rc.rax);
 	    }
         if(need_to_free)
         {

@@ -1,3 +1,4 @@
+#include "helperFunctions.h"
 char* isInPath(char* program_name)
 {
     char* path = getenv("PATH");
@@ -20,5 +21,5 @@ char* isInPath(char* program_name)
 
 char* syscallName64(int syscallNumber)
 {
-    
+    return syscallName64_array[syscallNumber];
 }
