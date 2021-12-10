@@ -9,8 +9,13 @@ spec:
   containers:
   - name: nginxApp
     image: nginx
+    # command is like ENTRYPOINT in Dockerfile
     command: ["sleep"]
+    # args is like CMD in Dockerfile.
     args: ["1000"]
+    env:
+      - name: YUVAL
+        value: weber
     resources:
       requests:
         cpu: "125m"

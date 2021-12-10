@@ -1,0 +1,7 @@
+FROM alpine:latest
+# if we specify entrypoint then the command instruction is the argument of it,
+# and user can change the argument by adding argument to the docker run command.
+# if we just specify cmd then user can change it from the argument line in docker run.
+# if we specify entrypoint without cmd, then it is a command without arguments, and user need to add the agrument.
+ENTRYPOINT [ "sleep" ]
+CMD ["10"]

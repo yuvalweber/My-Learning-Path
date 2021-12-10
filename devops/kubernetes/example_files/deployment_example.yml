@@ -3,6 +3,11 @@ kind: Deployment
 metadata:
   name: myapp
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: myapp

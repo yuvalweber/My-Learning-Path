@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp
+  labels:
+    name: myapp
+spec:
+  containers:
+  - name: myapp
+    image: nginx
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    # set all values from configmap
+    envFrom:
+      - configMapRef:
+          name: myapp-config
+  - name: myapp-second
+    image: nginx
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    env:
+    # set specific value from configmap
+      - name: COLOR
+        valueFrom:
+          configMapKeyRef:
+            name: myapp-config
+            key: COLOR
+    # or inject data from volume
+  volumes:
+    - name: myapp-config-volume
+      configMap:
+        name: myapp-config

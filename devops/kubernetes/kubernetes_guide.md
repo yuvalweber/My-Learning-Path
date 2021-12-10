@@ -140,46 +140,71 @@ kubectl scale deployments/<deployment_name> --replicas=<number_of_replicas>
 
 15) set the image the pods uses  
 ```
-kubectl set image deployments/<name>=<name_of_new_image>
+kubectl set image deployment/<name> <container_name>=<name_of_new_image>
 ```
 
-16) check an update  
+16) check a rollout status
 ```
 kubectl rollout status deployments/<name> 
 ```
 
-17) undo an update  
+17) check rollout history status
+```
+kubectl rollout history deployment/<name>
+```
+
+18) undo a rollout  
 ```
 kubectl rollout undo deployments/<name>
 ```
 
-18) output the command to yaml file
+19) output the command to yaml file
 ```
 kubectl run redis --image=redis --dry-run=client -o yaml > definition.yml
 ```
 
-19) change current working namespace
+20) change current working namespace
 ```
 kubectl config set-context $(kubectl config current-context) --namespace=dev
 ```
 
-20) taint a node
+21) taint a node
 ```
 kubectl taint nodes <node_name> key=value:NoSchedule
 ```
 
-21) show all the option for creating a resource
+22) show all the option for creating a resource
 ```
 kubectl explain pod --recursive | less
 ```
 
-22) output saved configuration to file
+23) output saved configuration to file
 ```
 kubectl get deployment <example> -o yaml > file.yaml
 ```
-
-
-
-
-
-
+24) create configmap
+```
+kubectl create configmap <config_name> \
+    --from-literal=<key>=<value> \
+    --from-literal=<key>=<value>
+```
+25) create configmap from file
+```
+kubectl create configmap <config_name> \
+    --from-file=<path_to_file>
+```
+26) create secret 
+```
+kubectl create secret generic <secret_name> \
+    --from-literal=<key>=<value> \
+    --from-literal=<key>=<value>
+```
+27) create secret from file
+```
+kubectl create secret generic <secret_name> \
+    --from-file=<path_to_file>
+```
+28) show data of secret 
+```
+kubectl get secret <secret_name> -o yaml
+```
