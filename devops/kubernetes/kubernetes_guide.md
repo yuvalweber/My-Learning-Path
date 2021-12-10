@@ -208,3 +208,79 @@ kubectl create secret generic <secret_name> \
 ```
 kubectl get secret <secret_name> -o yaml
 ```
+29) prepare node for maintenance
+```
+kubectl drain <node_name>
+```
+30) move node out of drain, and make it scheduleable.
+```
+kubectl uncordon <node_name>
+```
+31) mark node as unscheduleable (but does not terminate and move pods like ``drain``)
+```
+kubectl cordon <node_name>
+```
+32) upgrading a cluster
+first thing run:
+```
+kubeadm upgrade plan
+```
+this will show us information about what version we can upgrade to.
+now run
+```
+kubeadm upgrade apply <version>
+```
+this will upgrade utilities like apiserver.
+
+for upgrading the ``kubelet`` for example you need to run:
+```
+apt-get upgrade -y kubelet=<version>
+```
+
+now for doing so in each worker node we do this:
+1) first we drain the node 
+2) we upgrade kubeadm,and kubelet like this:
+```
+apt-get upgrade -y kubeadm=<version>
+```
+3) then update the node config:
+```
+kubeadm upgrade node
+```
+4) then restart kubelet
+```
+systemctl restart kubelet
+```
+5) and now make node scheduleable again 
+
+<br>
+<br>
+
+33) create snapshot of etcd
+```
+ETCDCTL_API=3 etcdctl snapshot save <snapshot_name>.db 
+```
+34) see info about the snapshot
+```
+ETCDCTL_API=3 etcdctl snapshot status <snapshot_name>
+```
+<br>
+
+35) restore from snapshot
+1. first stop apiserver
+```
+systemctl stop kube-apiserver
+```
+2. then restore
+``` 
+ETCDCTL_API=3 etcdctl snapshot restore \
+<snapshot_name> --data-dir <path>
+```
+3. reload daemon and restart etcd
+```
+systemctl daemon-reload
+systemctl restart etcd
+systemctl restart kube-apiserver
+```
+
+
