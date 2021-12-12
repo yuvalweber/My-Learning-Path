@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp
+  labels:
+    name: myapp
+spec:
+  # security context in the level of the pod
+  securityContext:
+    runAsUser: 1001
+  containers:
+  - name: myapp
+    image: nginx
+    # security context in the container level (this is stronger than the pod level)
+    securityContext:
+      runAsUser: 1002
+      capabilities:
+        add: ["SYS_PTRACE"]
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"

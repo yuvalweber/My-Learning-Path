@@ -1,0 +1,27 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: default
+  name: deployment-reader
+rules:
+- apiGroups: ["extensions","apps"]
+  resources: ["deployments"]
+  verbs: ["get", "watch", "list"]
+  # limit to specific resources
+  resourceNames: ["blue","green"]
+ 
+---
+# This role binding allows "user1" to get,watch and list deployments in the "default" namespace.
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-pods
+  namespace: default
+subjects:
+- kind: User
+  name: user1 # Name is case sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role 
+  name: deployment-reader # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io

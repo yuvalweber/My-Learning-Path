@@ -283,4 +283,75 @@ systemctl restart etcd
 systemctl restart kube-apiserver
 ```
 
+36) see available csr
+```
+kubectl get csr
+```
 
+37) approve csr
+```
+kubectl certificate approve <name>
+```
+
+38) deny csr
+```
+kubectl certificate deny <name>
+```
+
+39) delete csr
+```
+kubectl delete certificate <name>
+```
+
+40) show kubernetes config
+```
+kubectl config show
+```
+or you can specifiy which config to see
+```
+kubectl config show --kubeconfig=kubec.config
+```
+
+41) change current context
+```
+kubectl config use-context <context>
+```
+
+42) show roles
+```
+kubectl get roles
+```
+
+43) show role bindings
+```
+kubectl get rolebindings
+```
+
+44) show extended info about role
+```
+kubectl describe role <name>
+```
+
+45) check if you have permission to do something.
+```
+kubectl auth can-i <operation> <resource>
+kubectl auth can-i create deployments
+# check as another user
+kubectl auth can-i <operation> <resource> --as <user> --namespace <namespace>
+```
+46) see namespaced resources
+```
+kubectl api-resources --namespaced=true
+```
+47) see unnamespaced resources
+```
+kubectl api-resources --namespaced=false
+```
+48) create serviceaccount
+```
+kubectl create serviceaccount <name>
+```
+49) see info about serviceaccount
+```
+kubectl describe serviceaccount <name>
+```

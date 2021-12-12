@@ -1,0 +1,37 @@
+# this policy allow traffic on port 3306 from api-pod to pod with label role=db
+# this policy also allow traffic on port 3307 from superapi-pod to pod wil label role=db
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: example
+spec:
+  podSelector:
+    matchLabels:
+      role: db
+  policyTypes:
+    - Ingress
+  ingress:
+  - from:
+    # works like or operation, or the podSelector + namespaceSelector works, or the ipBlock
+    # the "-" seperate it to several conditions
+    - podSelector:
+        matchLabels:
+          name: api-pod
+      namespaceSelector:
+        matchLabels:
+          name: default
+    # define range of ips that this policy is apply on
+    - ipBlock:
+        cidr: 10.100.102.1/16
+    ports:
+      - protocol: TCP
+        port: 3306
+  - from:
+    - podSelector:
+        matchLabels:
+          name: superapi-pod
+      namespaceSelector:
+        name: default
+    ports:
+      - protocol: TCP
+        port: 3307

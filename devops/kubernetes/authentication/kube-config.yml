@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Config
+#default context
+current-context: kubernetes-admin@kubernetes
+clusters:
+- cluster: 
+    certificate-authority: ca.crt
+    server: https://node:6443
+  name: kubernetes
+users:
+- name: kubernetes-admin
+  user:
+    client-certificate: admin.crt
+    client-key: admin.key
+contexts:
+- name: kubernetes-admin@kubernetes
+  context: 
+    cluster: kubernetes
+    user: kubernetes-admin
+    namespace: default
