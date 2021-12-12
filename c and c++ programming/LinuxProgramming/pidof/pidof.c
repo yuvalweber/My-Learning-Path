@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 
         if(mone > 0)
         {
-            for(int i=0;i <= mone; i++)
+            for(int i=0;i < mone; i++)
             {
                 printf("%d ",results[i]);
             }
