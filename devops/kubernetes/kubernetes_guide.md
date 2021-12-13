@@ -105,12 +105,12 @@ kubectl logs <pod_name> <container_name>
 
 8) execute command on pod  
 ```
-kuebctl exec <pod_name> <command>
+kuebctl exec <pod_name> <container> -- <command>
 ```
 
 9) open shell on pod  
 ```
-kubectl exec -ti <pod_name> bash
+kubectl exec -ti <pod_name> <container> -- bash
 ```
 
 10) creating proxy to our pod  
