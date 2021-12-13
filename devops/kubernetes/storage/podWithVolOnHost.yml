@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp
+  labels:
+    name: myapp
+spec:
+  containers:
+  - name: myapp
+    image: nginx
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    volumeMounts:
+      - mountPath: /opt
+        name: data-volume
+  # this method is not recommended because the data is not persist across nodes.
+  volumes:
+    - name: data-volume
+      hostPath:
+        path: /data
+        type: Directory
