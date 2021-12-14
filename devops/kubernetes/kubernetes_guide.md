@@ -355,3 +355,24 @@ kubectl create serviceaccount <name>
 ```
 kubectl describe serviceaccount <name>
 ```
+50) get pods image with jsonpath
+```
+kubectl get pods -o=jsonpath='{.items[*].spec.containers[*].image}'
+```
+
+51) show cpu usage of each node
+```
+kubectl get nodes -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}{end}'
+```
+52) json path with condition
+```
+kubectl config view --kubeconfig=my-kube-config -o=jsonpath='{.contexts[?(@.context.user == "aws-user")].name}'
+```
+53) custom columns
+```
+kubectl get nodes -o=custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu
+```
+54) sort by
+```
+kubectl get nodes --sort-by=.status.capacity.cpu
+```
