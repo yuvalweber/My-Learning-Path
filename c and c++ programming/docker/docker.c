@@ -49,6 +49,8 @@ void mount_procfs()
     }
 }
 
+// leaving no way to escape the jail(because we have changed the new root of the filesystem,
+// and we also in a new mount namespace than the other processes in the system).
 void pivot_root_trick()
 {
     char * mount_point = "./alpine";
@@ -62,9 +64,9 @@ void pivot_root_trick()
 }
 
 /*
-    clone new pid and uts,
+    clone new pid and uts and mount namespace,
     set the hostname,
-    and executing the new process
+    and remounting the / of the process
 */
 
 void new_hostname_pid_ns()
