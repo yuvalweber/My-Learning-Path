@@ -46,9 +46,10 @@ int main(int argc, char* argv[])
     }
 
     //check if elf and executable and check if 64 or 32 bit.
-    FILE* file = fopen(new_path,'rb');
+    FILE* file = fopen(new_path,"rb");
     fread(&header,sizeof(header),1,file);
-    if(!(memcmp(header.e_ident,ELFMAG,SELFMAG) == 0 || header.e_type == ET_EXEC))
+    // EXECUTABLE can also be ET_DYN because of position independet code.
+    if(!(memcmp(header.e_ident,ELFMAG,SELFMAG) == 0 && header.e_type == ET_EXEC || header.e_type == ET_DYN))
     {
         printf("%s","file is not executable or not elf format");
         exit(1);
