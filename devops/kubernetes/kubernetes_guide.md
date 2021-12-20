@@ -338,6 +338,8 @@ kubectl auth can-i <operation> <resource>
 kubectl auth can-i create deployments
 # check as another user
 kubectl auth can-i <operation> <resource> --as <user> --namespace <namespace>
+# check for service account
+kubectl auth can-i <operation> <resource> --as system:serviceaccount:<namespace>:<username> --namespace <namespace>
 ```
 46) see namespaced resources
 ```
