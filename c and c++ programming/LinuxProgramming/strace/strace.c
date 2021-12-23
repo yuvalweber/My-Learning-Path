@@ -22,6 +22,7 @@ int main(int argc, char* argv[])
     bool is32 = false;
     Elf64_Ehdr header;
     char* syscallName;
+
     // checking if there are enough arguments
     if (argc != 2)
     {
@@ -29,7 +30,7 @@ int main(int argc, char* argv[])
         return(0);
     }
 
-    // find if executable is in path environment variable
+    // find if executable is in $PATH environment variable
     if(fopen(argv[1],"r") != NULL)
     {
         new_path = argv[1];
@@ -48,8 +49,8 @@ int main(int argc, char* argv[])
     //check if elf and executable and check if 64 or 32 bit.
     FILE* file = fopen(new_path,"rb");
     fread(&header,sizeof(header),1,file);
-    // EXECUTABLE can also be ET_DYN because of position independet code.
-    if(!(memcmp(header.e_ident,ELFMAG,SELFMAG) == 0 && header.e_type == ET_EXEC || header.e_type == ET_DYN))
+    // EXECUTABLE can also be ET_DYN because of position independent code.
+    if(memcmp(header.e_ident,ELFMAG,SELFMAG) != 0 || (header.e_type != ET_EXEC && header.e_type != ET_DYN))
     {
         printf("%s","file is not executable or not elf format");
         exit(1);
@@ -82,19 +83,21 @@ int main(int argc, char* argv[])
     //parent process
     else
     {
+        // wait is waiting for signal from the child process
         wait(&status);           
-	    while(!WIFEXITED(status))
-	    {
+        // check if child exited
+        while(!WIFEXITED(status))
+        {
             ptrace(PTRACE_SYSCALL,child,NULL,NULL);
-		    wait(&status);
+            wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&regs);
-            //FixMe: add here a one line if statement
+            // return syscall name
             syscallName = is32 ? syscallName32((int)regs.orig_rax) : syscallName64((int)regs.orig_rax);
-        	ptrace(PTRACE_SYSCALL,child,NULL,NULL);
-		    wait(&status);
+            ptrace(PTRACE_SYSCALL,child,NULL,NULL);
+            wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&rc);
-            fprintf(stderr,"%s(0x%llx,0x%llx,0x%llx) = 0x%llx\n",syscallName,regs.rdi,regs.rsi,regs.rdx,rc.rax);
-	    }
+            fprintf(stderr,"%s(%lld,0x%llx,0x%llx) = %lld\n",syscallName,regs.rdi,regs.rsi,regs.rdx,rc.rax);
+        }
         if(need_to_free)
         {
             free(new_path);
