@@ -305,11 +305,11 @@ kubectl delete certificate <name>
 
 40) show kubernetes config
 ```
-kubectl config show
+kubectl config view
 ```
 or you can specifiy which config to see
 ```
-kubectl config show --kubeconfig=kubec.config
+kubectl config view --kubeconfig=kubec.config
 ```
 
 41) change current context
