@@ -22,6 +22,7 @@ int main(int argc, char* argv[])
     bool is32 = false;
     Elf64_Ehdr header;
     char* syscallName;
+    char* return_code;
 
     // checking if there are enough arguments
     if (argc != 2)
@@ -96,7 +97,16 @@ int main(int argc, char* argv[])
             ptrace(PTRACE_SYSCALL,child,NULL,NULL);
             wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&rc);
-            fprintf(stderr,"%s(%lld,0x%llx,0x%llx) = %lld\n",syscallName,regs.rdi,regs.rsi,regs.rdx,rc.rax);
+            if((int)rc.rax < 0 && (int)rc.rax > -135)
+            {
+
+                return_code = errorParser(rc.rax);
+                fprintf(stderr,"%s(%lld,0x%llx,0x%llx) = %s\n",syscallName,regs.rdi,regs.rsi,regs.rdx,return_code);
+            }
+            else 
+	    {
+                fprintf(stderr,"%s(%lld,0x%llx,0x%llx) = %lld\n",syscallName,regs.rdi,regs.rsi,regs.rdx,rc.rax);
+	    }
         }
         if(need_to_free)
         {
