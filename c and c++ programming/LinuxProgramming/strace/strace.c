@@ -19,7 +19,6 @@ int main(int argc, char* argv[])
     int status;
     char* new_path;
     bool need_to_free = false;
-    bool is32 = false;
     Elf64_Ehdr header;
     char* syscallName;
     char* return_code;
@@ -56,9 +55,10 @@ int main(int argc, char* argv[])
         printf("%s","file is not executable or not elf format");
         exit(1);
     }
+    //FIXME: need to implement 32bit, meanwhile just 64 supported.
     if(header.e_ident[EI_CLASS] == ELFCLASS32)
     {
-        is32 = true;
+        fprintf(stderr,"32bit not supported, maybe add in the future");
     }
 
     
@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
     {
         //pid addr and data are ignored because the parent is tracing him
         ptrace(PTRACE_TRACEME,0,NULL,NULL);
+        //FIXME: add all argv parameters and not just argv[1]
         execve(new_path,new_argv,new_envp);
         // if execve returns it mean it failed
         perror("execve");
@@ -93,20 +94,28 @@ int main(int argc, char* argv[])
             wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&regs);
             // return syscall name
-            syscallName = is32 ? syscallName32((int)regs.orig_rax) : syscallName64((int)regs.orig_rax);
+            syscallName = syscallParser64(&regs);
             ptrace(PTRACE_SYSCALL,child,NULL,NULL);
             wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&rc);
             if((int)rc.rax < 0 && (int)rc.rax > -135)
             {
-
                 return_code = errorParser(rc.rax);
-                fprintf(stderr,"%s(%lld,0x%llx,0x%llx) = %s\n",syscallName,regs.rdi,regs.rsi,regs.rdx,return_code);
+                fprintf(stderr,"%s = %s\n",syscallName,return_code);
+                free(return_code);
             }
             else 
-	    {
-                fprintf(stderr,"%s(%lld,0x%llx,0x%llx) = %lld\n",syscallName,regs.rdi,regs.rsi,regs.rdx,rc.rax);
-	    }
+	        {
+                if((unsigned)rc.rax > 1000000)
+                {
+                    fprintf(stderr,"%s = 0x%llx\n",syscallName,rc.rax);
+                }
+                else
+                {
+                    fprintf(stderr,"%s = %llu\n",syscallName,rc.rax);
+                }
+	        }
+            syscallName = NULL;
         }
         if(need_to_free)
         {

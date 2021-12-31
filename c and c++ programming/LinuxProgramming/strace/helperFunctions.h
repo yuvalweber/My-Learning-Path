@@ -1,11 +1,9 @@
 #ifndef HELPER_H    
 #define HELPER_H
+#include <sys/user.h>
 char* isInPath(char* program_name);
-char* syscallName64(int syscallNumber);
-char* syscallName32(int syscallNumber);
-char* errorParser(long long int errorNum);
-
-extern const char* syscallName64_array[];
-extern const char* syscallName32_array[];
+char* syscallParser64(struct user_regs_struct *regs);
+char* errorParser(long long unsigned errorNum);
 extern const char* errorNames[];
+char buffer[4096];
 #endif
