@@ -28,25 +28,12 @@ int read_memory(int pid,void* memory_address,size_t length,char* memory_buffer)
     return (int)nread;
 }
 
-int dec_to_oct(int num)
-{
-    int octal=0, rem, i=1;
-    while(num != 0)
-    {   
-        rem = num%8;
-        octal = (rem*i) + octal; 
-        num = num/8;
-        i= i*10;                         
-    }
-    return octal;
-}
-
 void unescape_string(char* buffer,unsigned length)
 {
     unsigned buffer_length = length * 3;
     char temp_buffer[buffer_length];
     int temp_buffer_mone = 0;
-    int number;
+    int len_to_add;
     for(i=0;i<length;i++)
     {
         if (isprint(buffer[i]) && buffer[i] != '\'' && buffer[i] != '\"' && buffer[i] != '\\' && buffer[i] != '\?')
@@ -71,22 +58,9 @@ void unescape_string(char* buffer,unsigned length)
                 case '\?':  strcpy(temp_buffer + temp_buffer_mone, "\\\?");temp_buffer_mone+=2; break;
                 case '\0':  strcpy(temp_buffer + temp_buffer_mone, "\\0");temp_buffer_mone+=2; break;
                 default:
-                    number = dec_to_oct((int)buffer[i]);
-                    if(number < 10)
-                    {
-                        sprintf(temp_buffer + temp_buffer_mone, "\\%01o", buffer[i]);
-                        temp_buffer_mone+=2;
-                    }
-                    else if(number > 10 && number < 100)
-                    {
-                        sprintf(temp_buffer + temp_buffer_mone, "\\%02o", buffer[i]);
-                        temp_buffer_mone+=3;
-                    }
-                    else
-                    {
-                        sprintf(temp_buffer + temp_buffer_mone, "\\%03o", buffer[i]);
-                        temp_buffer_mone+=4;
-                    }
+                    sprintf(temp_buffer + temp_buffer_mone,"\\%o",buffer[i]);
+                    len_to_add = strlen(temp_buffer + temp_buffer_mone);
+                    temp_buffer_mone += len_to_add;
                     break;
             }
         }
