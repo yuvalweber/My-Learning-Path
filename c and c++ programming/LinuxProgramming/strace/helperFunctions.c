@@ -17,13 +17,16 @@ char* isInPath(char* program_name)
     char* path = getenv("PATH");
     char* splittedPath = strtok(path,":");
     char* path_to_check = malloc(sizeof(char*));
+    FILE* file;
     while(splittedPath != NULL)
     {
         strcpy(path_to_check,splittedPath);
         strcat(path_to_check,"/");
         strcat(path_to_check,program_name);
-        if(fopen(path_to_check,"r") != NULL)
+        file = fopen(path_to_check,"r"); 
+        if(file != NULL)
         {
+            fclose(file);
             return path_to_check;
         }
         splittedPath = strtok(NULL,":");
@@ -32,11 +35,11 @@ char* isInPath(char* program_name)
     return NULL;
 }
 
-char* syscallParser64(struct user_regs_struct *regs)
+char* syscallParser64(int child,struct user_regs_struct *regs)
 {
     
     struct syscall *sys64 = (struct syscall *)&sys_ent[regs->orig_rax];
-    sys64->function(buffer,regs,sys64);
+    sys64->function(child,buffer,regs,sys64);
     return buffer;
 }
 

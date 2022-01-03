@@ -10,10 +10,9 @@
 #include <elf.h>
 #include "helperFunctions.h"
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[],char* envp[])
 {
     char *new_argv[] = {argv[1],NULL};
-    char *new_envp[] = {NULL};
     struct user_regs_struct regs;
     struct user_regs_struct rc;
     int status;
@@ -22,6 +21,7 @@ int main(int argc, char* argv[])
     Elf64_Ehdr header;
     char* syscallName;
     char* return_code;
+    FILE* path_file;
 
     // checking if there are enough arguments
     if (argc != 2)
@@ -31,9 +31,11 @@ int main(int argc, char* argv[])
     }
 
     // find if executable is in $PATH environment variable
-    if(fopen(argv[1],"r") != NULL)
+    path_file = fopen(argv[1],"r");
+    if (path_file != NULL)
     {
         new_path = argv[1];
+        fclose(path_file);
     }
     else
     {
@@ -60,7 +62,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr,"32bit not supported, maybe add in the future");
     }
-
+    fclose(file);
     
     pid_t child = fork();
     //child process
@@ -69,7 +71,7 @@ int main(int argc, char* argv[])
         //pid addr and data are ignored because the parent is tracing him
         ptrace(PTRACE_TRACEME,0,NULL,NULL);
         //FIXME: add all argv parameters and not just argv[1]
-        execve(new_path,new_argv,new_envp);
+        execve(new_path,new_argv,envp);
         // if execve returns it mean it failed
         perror("execve");
         return(1);
@@ -94,7 +96,7 @@ int main(int argc, char* argv[])
             wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&regs);
             // return syscall name
-            syscallName = syscallParser64(&regs);
+            syscallName = syscallParser64(child,&regs);
             ptrace(PTRACE_SYSCALL,child,NULL,NULL);
             wait(&status);
             ptrace(PTRACE_GETREGS,child,NULL,&rc);

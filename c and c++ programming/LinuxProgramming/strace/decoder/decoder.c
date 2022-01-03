@@ -1,69 +1,89 @@
 #include "decoder.h"
+#include "decoder_helper.h"
+#include <string.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <fcntl.h>
 #define IMPLEMENTED 0 
 #define NOT_IMPLEMENTED 1
 
-int decode_read(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+char memory_buffer[4096]; 
+unsigned length = 0;
+char path[256];
+
+int decode_read(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+{
+    if(regs->rdx > 32){length = 32;}
+    else{length = regs->rdx;}
+    sprintf(path,"/proc/%d/fd/%llu",pid,regs->rdi);
+    int fd = open(path,O_RDONLY);
+    if(fd < 0 ){perror("open in read");}
+    if(read(fd,memory_buffer,length) < 0){perror("read in read");};
+    if(close(fd) < 0){perror("close in read");};
+    unescape_string(memory_buffer,length);
+    snprintf(buffer,4096,"%s(%llu,\"%s\"...,%llu)",entry->name,regs->rdi,memory_buffer,regs->rdx);
+	return IMPLEMENTED;
+}
+int decode_write(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+{
+    if(regs->rdx > 32){length = 32;}
+    else{length = regs->rdx;}
+    read_memory(pid,(void *)regs->rsi,(size_t)length,memory_buffer); 
+    unescape_string(memory_buffer,length);
+    snprintf(buffer,4096,"%s(%llu,\"%s\"...,%llu)",entry->name,regs->rdi,memory_buffer,regs->rdx);
+	return IMPLEMENTED;
+}
+int decode_open(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_write(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
-{
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
-}
-int decode_open(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
-{
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
-}
-int decode_close(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_close(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%d)",entry->name,(int)regs->rdi);
 	return IMPLEMENTED;
 }
-int decode_stat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_stat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fstat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fstat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_lstat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_lstat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_poll_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_poll_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_lseek(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_lseek(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mmap(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mmap(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mprotect(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mprotect(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_munmap(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_munmap(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_brk(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_brk(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     if((int)regs->rdi == 0)
     {
@@ -75,1582 +95,1582 @@ int decode_brk(char* buffer,struct user_regs_struct *regs, struct syscall *entry
     }
     return IMPLEMENTED;
 }
-int decode_rt_sigaction(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_sigaction(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rt_sigprocmask(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_sigprocmask(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rt_sigreturn(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_sigreturn(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ioctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ioctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pread(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pread(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pwrite(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pwrite(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_readv(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_readv(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_writev(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_writev(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_access(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_access(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pipe(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pipe(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_select(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_select(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_yield(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_yield(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mremap(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mremap(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_msync(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_msync(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mincore(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mincore(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_madvise(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_madvise(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_shmget(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_shmget(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_shmat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_shmat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_shmctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_shmctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_dup(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_dup(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_dup2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_dup2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pause(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pause(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_nanosleep_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_nanosleep_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getitimer(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getitimer(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_alarm(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_alarm(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setitimer(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setitimer(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getpid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getpid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sendfile64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sendfile64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_socket(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_socket(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_connect(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_connect(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_accept(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_accept(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sendto(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sendto(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_recvfrom(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_recvfrom(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sendmsg(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sendmsg(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_recvmsg(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_recvmsg(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_shuown(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_shuown(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_bind(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_bind(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_listen(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_listen(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getsockname(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getsockname(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getpeername(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getpeername(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_socketpair(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_socketpair(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setsockopt(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setsockopt(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getsockopt(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getsockopt(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_clone(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_clone(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fork(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fork(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_vfork(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_vfork(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_execve(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_execve(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_exit(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_exit(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_wait4(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_wait4(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_kill(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_kill(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_uname(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_uname(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_semget(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_semget(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_semop(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_semop(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_semctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_semctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_shmdt(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_shmdt(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_msgget(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_msgget(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_msgsnd(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_msgsnd(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_msgrcv(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_msgrcv(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_msgctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_msgctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fcntl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fcntl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_flock(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_flock(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fsync(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fsync(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fdatasync(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fdatasync(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_truncate(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_truncate(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ftruncate(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ftruncate(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_geents(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_geents(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getcwd(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getcwd(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_chdir(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_chdir(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fchdir(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fchdir(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rename(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rename(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mkdir(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mkdir(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rmdir(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rmdir(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_creat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_creat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_link(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_link(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_unlink(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_unlink(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_symlink(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_symlink(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_readlink(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_readlink(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_chmod(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_chmod(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fchmod(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fchmod(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_chown(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_chown(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fchown(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fchown(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_umask(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_umask(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_gettimeofday(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_gettimeofday(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getrlimit(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getrlimit(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getrusage(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getrusage(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sysinfo(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sysinfo(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_times(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_times(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ptrace(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ptrace(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getuid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getuid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_syslog(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_syslog(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getgid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getgid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setuid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setuid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setgid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setgid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_geteuid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_geteuid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getegid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getegid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setpgid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setpgid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getppid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getppid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getpgrp(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getpgrp(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setsid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setsid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setreuid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setreuid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setregid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setregid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getgroups(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getgroups(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setgroups(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setgroups(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setresuid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setresuid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getresuid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getresuid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setresgid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setresgid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getresgid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getresgid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getpgid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getpgid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setfsuid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setfsuid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setfsgid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setfsgid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getsid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getsid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_capget(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_capget(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_capset(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_capset(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rt_sigpending(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_sigpending(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rt_sigtimedwait_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_sigtimedwait_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rt_sigqueueinfo(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_sigqueueinfo(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rt_sigsuspend(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_sigsuspend(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sigaltstack(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sigaltstack(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_utime(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_utime(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mknod(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mknod(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_uselib(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_uselib(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_personality(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_personality(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ustat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ustat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_statfs(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_statfs(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fstatfs(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fstatfs(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sysfs(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sysfs(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getpriority(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getpriority(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setpriority(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setpriority(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_setparam(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_setparam(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_getparam(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_getparam(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_setscheduler(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_setscheduler(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_getscheduler(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_getscheduler(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_get_priority_max(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_get_priority_max(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_get_priority_min(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_get_priority_min(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_rr_get_interval_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_rr_get_interval_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mlock(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mlock(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_munlock(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_munlock(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mlockall(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mlockall(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_munlockall(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_munlockall(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_vhangup(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_vhangup(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_modify_ldt(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_modify_ldt(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pivotroot(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pivotroot(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sysctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sysctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_prctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_prctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_arch_prctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_arch_prctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_adjtimex64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_adjtimex64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setrlimit(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setrlimit(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_chroot(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_chroot(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sync(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sync(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_acct(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_acct(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_settimeofday(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_settimeofday(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mount(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mount(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_umount2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_umount2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_swapon(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_swapon(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_swapoff(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_swapoff(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_reboot(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_reboot(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sethostname(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sethostname(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_seomainname(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_seomainname(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_iopl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_iopl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ioperm(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ioperm(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_create_module(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_create_module(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_init_module(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_init_module(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_delete_module(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_delete_module(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_get_kernel_syms(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_get_kernel_syms(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_query_module(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_query_module(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_quotactl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_quotactl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_nfsservctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_nfsservctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getpmsg(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getpmsg(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_putpmsg(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_putpmsg(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_afs_syscall(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_afs_syscall(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_tuxcall(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_tuxcall(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_security(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_security(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_gettid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_gettid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_readahead(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_readahead(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setxattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setxattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fsetxattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fsetxattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getxattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getxattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fgetxattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fgetxattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_listxattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_listxattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_flistxattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_flistxattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_removexattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_removexattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fremovexattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fremovexattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_tkill(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_tkill(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_time(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_time(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_futex_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_futex_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_setaffinity(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_setaffinity(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_getaffinity(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_getaffinity(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_set_thread_area(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_set_thread_area(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_io_setup(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_io_setup(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_io_destroy(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_io_destroy(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_io_getevents_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_io_getevents_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_io_submit(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_io_submit(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_io_cancel(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_io_cancel(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_get_thread_area(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_get_thread_area(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_lookup_dcookie(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_lookup_dcookie(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_epoll_create(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_epoll_create(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_epoll_ctl_old(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_epoll_ctl_old(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_epoll_wait_old(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_epoll_wait_old(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_remap_file_pages(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_remap_file_pages(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_geents64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_geents64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_set_tid_address(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_set_tid_address(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_restart_syscall(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_restart_syscall(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_semtimedop_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_semtimedop_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fadvise64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fadvise64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timer_create(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timer_create(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timer_settime64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timer_settime64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timer_gettime64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timer_gettime64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timer_getoverrun(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timer_getoverrun(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timer_delete(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timer_delete(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_clock_settime64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_clock_settime64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_clock_gettime64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_clock_gettime64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_clock_getres_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_clock_getres_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_clock_nanosleep_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_clock_nanosleep_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_epoll_wait(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_epoll_wait(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_epoll_ctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_epoll_ctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_tgkill(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_tgkill(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_utimes(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_utimes(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_vserver(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_vserver(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mbind(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mbind(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_set_mempolicy(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_set_mempolicy(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_get_mempolicy(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_get_mempolicy(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mq_open(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mq_open(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mq_unlink(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mq_unlink(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mq_timedsend_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mq_timedsend_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mq_timedreceive_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mq_timedreceive_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mq_notify(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mq_notify(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mq_getsetattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mq_getsetattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_kexec_load(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_kexec_load(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_waitid(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_waitid(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_add_key(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_add_key(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_request_key(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_request_key(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_keyctl(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_keyctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ioprio_set(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ioprio_set(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ioprio_get(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ioprio_get(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_inotify_init(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_inotify_init(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_inotify_add_watch(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_inotify_add_watch(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_inotify_rm_watch(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_inotify_rm_watch(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_migrate_pages(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_migrate_pages(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_openat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_openat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mkdirat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mkdirat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mknodat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mknodat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fchownat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fchownat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_futimesat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_futimesat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_newfstatat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_newfstatat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_unlinkat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_unlinkat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_renameat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_renameat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_linkat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_linkat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_symlinkat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_symlinkat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_readlinkat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_readlinkat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fchmodat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fchmodat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_faccessat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_faccessat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pselect6_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pselect6_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_ppoll_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_ppoll_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_unshare(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_unshare(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_set_robust_list(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_set_robust_list(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_get_robust_list(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_get_robust_list(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_splice(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_splice(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_tee(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_tee(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sync_file_range(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sync_file_range(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_vmsplice(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_vmsplice(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_move_pages(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_move_pages(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_utimensat_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_utimensat_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_epoll_pwait(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_epoll_pwait(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_signalfd(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_signalfd(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timerfd_create(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timerfd_create(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_eventfd(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_eventfd(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fallocate(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fallocate(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timerfd_settime64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timerfd_settime64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_timerfd_gettime64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_timerfd_gettime64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_accept4(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_accept4(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_signalfd4(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_signalfd4(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_eventfd2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_eventfd2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_epoll_create1(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_epoll_create1(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_dup3(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_dup3(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pipe2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pipe2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_inotify_init1(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_inotify_init1(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_preadv(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_preadv(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pwritev(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pwritev(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rt_tgsigqueueinfo(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rt_tgsigqueueinfo(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_perf_event_open(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_perf_event_open(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_recvmmsg_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_recvmmsg_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fanotify_init(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fanotify_init(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_fanotify_mark(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_fanotify_mark(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_prlimit64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_prlimit64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_name_to_handle_at(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_name_to_handle_at(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_open_by_handle_at(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_open_by_handle_at(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_clock_adjtime64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_clock_adjtime64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_syncfs(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_syncfs(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sendmmsg(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sendmmsg(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_setns(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_setns(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getcpu(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getcpu(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_process_vm_readv(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_process_vm_readv(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_process_vm_writev(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_process_vm_writev(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_kcmp(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_kcmp(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_finit_module(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_finit_module(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_setattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_setattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_sched_getattr(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_sched_getattr(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_renameat2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_renameat2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_seccomp(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_seccomp(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_getrandom(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_getrandom(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_memfd_create(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_memfd_create(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_kexec_file_load(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_kexec_file_load(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_bpf(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_bpf(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_execveat(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_execveat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_userfaultfd(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_userfaultfd(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_membarrier(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_membarrier(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_mlock2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_mlock2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_copy_file_range(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_copy_file_range(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_preadv2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_preadv2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pwritev2(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pwritev2(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pkey_mprotect(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pkey_mprotect(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pkey_alloc(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pkey_alloc(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_pkey_free(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_pkey_free(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_statx(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_statx(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_io_pgetevents_time64(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_io_pgetevents_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
-int decode_rseq(char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+int decode_rseq(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
