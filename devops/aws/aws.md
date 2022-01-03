@@ -27,10 +27,19 @@ we need:
 
 after we configure those variables we can start using commands.
 
+or we can run `` aws configure`` and fill all the information there.
+
 <br>
 <br>
 
 # commands
+## iam commands
+1. list users
+```bash
+aws iam list-users
+```
+
+## s3 commands
 1. upload a file to an s3 bucket
 ```
 aws s3 cp <local_file_path> s3://<bucket_name>/<file_name>
