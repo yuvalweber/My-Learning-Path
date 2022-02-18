@@ -12,7 +12,6 @@
 
 int main(int argc, char* argv[],char* envp[])
 {
-    char *new_argv[] = {argv[1],NULL};
     struct user_regs_struct regs;
     struct user_regs_struct rc;
     int status;
@@ -71,7 +70,7 @@ int main(int argc, char* argv[],char* envp[])
         //pid addr and data are ignored because the parent is tracing him
         ptrace(PTRACE_TRACEME,0,NULL,NULL);
         //FIXME: add all argv parameters and not just argv[1]
-        execve(new_path,new_argv,envp);
+        execve(new_path,argv + 1,envp);
         // if execve returns it mean it failed
         perror("execve");
         return(1);
