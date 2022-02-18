@@ -1,6 +1,7 @@
 # Table of Contents
 - [download](#download)
 - [configuration](#configuration)
+- [important](#important)
 - [commands](#commands)
 
 <br>
@@ -31,6 +32,14 @@ or we can run `` aws configure`` and fill all the information there.
 
 <br>
 <br>
+
+# important
+there is a url that let ec2 instances learn about themself.
+the url is: http://169.254.169.254/latest/meta-data (only works form inside ec2).
+
+<br>
+<br>
+
 
 # commands
 ## iam commands
