@@ -1,0 +1,49 @@
+# used in order to run the jobs inside docker image
+# it pulls the specified image
+image: gcc:9
+# will run this before every script of stage
+before_script:
+  - echo "Executing job $CI_JOB_STAGE..."
+# used for caching of files and folders to use in other jobs
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - binaries/
+# define variables for the pipeline
+variables:
+  AUTHOR: yuvalweber
+# define stages 
+stages:
+  - build
+  - test
+  - deploy
+
+# job name
+build-job:
+  stage: build
+  # specify which runneres to run on based on tag 
+  tags:
+    - ci 
+  script:
+    - mkdir build
+    - gcc hello.c -o build/hello 
+  # we use artifacts in order to share file between jobs or to download them later
+  # this is because every job has a new clean environment
+  artifacts:
+    paths:
+      - "build/hello"
+
+test-job:
+  stage: test
+  script:
+    # $CI_PROJECT_DIR is the directory of the project
+    - $CI_PROJECT_DIR/build/hello
+
+deploy-job:
+  stage: deploy 
+  script:
+    # you can define secret variables in the settings cicd section and call them like variables
+    - echo "The Author of this is $AUTHOR, and his secret his $SECRET"
+  # run this job only on develop branch
+  only:
+    - develop
