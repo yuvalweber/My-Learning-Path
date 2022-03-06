@@ -1,0 +1,19 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "dockerHost"
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.network "private_network", ip: "192.168.33.12"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "1024"
+  end
+
+  config.vm.provision "docker" do |d|
+    d.pull_images "alpine:latest"
+    d.run "test_docker",
+      image: "alpine:latest",
+      cmd: "echo hello",
+      args: "-dit"
+end

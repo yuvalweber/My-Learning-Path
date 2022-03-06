@@ -1,0 +1,11 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: installing apache
+      apt:
+        name: apache2
+        state: latest
+    
+    - name: check extra vars
+      debug:
+        var: server_name
