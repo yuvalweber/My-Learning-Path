@@ -1,7 +1,7 @@
 # Table of Contents
 - [files](#files)
 - [commands](#commands)
-
+- [debugging](#debugging)
 <hr>
 
 ## <ins>files</ins>
@@ -106,3 +106,27 @@ terraform refresh
 terraform graph
 ```
 (you can use this to see the dependency of your resources)
+
+16) test expressions of terraform
+```bash
+terraform console
+```
+
+<hr>
+
+## debugging
+in order to enable debugging we need to set the environment variable ``TF_LOG``.
+
+you can set ``TF_LOG`` to one of the following:
+
+1. TRACE
+2. DEBUG
+3. INFO
+4. WARN
+5. ERROR
+
+you can also seperate the log to terraform itself and the provider by using the environment variables: 
+1. TF_LOG_CORE
+2. TF_LOG_PROVIDER
+
+to specifiy a specific location of the log use the ``TF_LOG_PATH`` environment variable (you will also need to specify the ``TF_LOG`` environment variable).

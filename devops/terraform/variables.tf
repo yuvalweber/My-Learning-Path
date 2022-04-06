@@ -55,3 +55,8 @@ variable "example_set" {
   type    = set(string)
   default = ["banana", "apple"]
 }
+
+variable "bool_file_name" {
+ type = bool
+ default = false 
+}

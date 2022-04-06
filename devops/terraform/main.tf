@@ -62,3 +62,8 @@ resource "local_file" "loop_files_count_example" {
   content = "example content"
   count = 3
 }
+
+resource "local_file" "bool_expression_file" {
+  filename = var.bool_file_name ? var.filename["first"] : "/tmp/else_of_this.txt"
+  content = "created with expression :)"
+}
