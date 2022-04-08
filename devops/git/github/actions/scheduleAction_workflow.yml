@@ -1,0 +1,13 @@
+name: Weekly Task
+on:
+  schedule:
+  - cron: 0 12 * * 1
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+  steps:
+  - name: checkout from repository
+    users: actions/checkout@v2
+    run: |
+      echo "Run Every Week! :)"

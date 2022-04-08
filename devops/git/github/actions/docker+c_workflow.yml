@@ -1,0 +1,55 @@
+name: example github action c+docker
+
+# when the workflow should be triggered.
+on:
+  # on push to main branch
+  push:
+    branches: [main]
+  # when merging with main branch
+  pull_request:
+    branches: [main]
+
+# jobs to run
+jobs:
+  # job name
+  build:
+    # where job run. 
+    # in this example will run the job on all os
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest,macOS-latest]
+
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v2
+
+    - name: compile c code
+      env:
+        TEST_ENV_VAR: env_var
+      # run task only if specific condition is met
+      if: github.ref == 'refs/heads/main'
+      run: |
+        gcc hello_world.c -o hello_world 
+
+    - name: create Dockerfile
+      run: |
+        cat > Dockerfile << EOF
+        FROM alpine:latest
+        COPY hello_world hello_world
+        CMD ["./hello_world"]
+        EOF
+
+    - name: build and push docker image
+      uses: mr-smithers-excellent/docker-build-push@v4
+      with:
+        image: yuvalweber/hello-world
+        registry: docker.io
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+
+  # another job
+  not_doing_anything:
+    # depends on build job, else it will execute in paralell
+    needs: [build] 
