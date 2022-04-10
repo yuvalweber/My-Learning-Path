@@ -67,3 +67,24 @@ resource "local_file" "bool_expression_file" {
   filename = var.bool_file_name ? var.filename["first"] : "/tmp/else_of_this.txt"
   content = "created with expression :)"
 }
+
+# null resource meant for running scripts without resource
+resource "null_resource" "example_provisioner_null" {
+  # when the value in the trigger changed the provisioner runs
+  triggers = {
+    id = "${local_file.bool_expression_file.id}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo test provisioner"
+    ]
+  }
+
+  connection {
+    type = "ssh"
+    user = "root"
+    password = random_password.generated_pass.result
+    host = "127.0.0.1"
+  }
+}

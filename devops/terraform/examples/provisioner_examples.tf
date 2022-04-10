@@ -15,3 +15,24 @@ resource "aws_instance" "web" {
     host = "${var.host}"
   }
 }
+
+# null resource meant for running scripts without resource
+resource "null_resource" "example_provisioner_null" {
+  # when the value in the trigger changed the provisioner runs
+  triggers = {
+    id = "${local_file.bool_expression_file.id}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo test provisioner"
+    ]
+  }
+
+  connection {
+    type = "ssh"
+    user = "root"
+    password = random_password.generated_pass.result
+    host = "127.0.0.1"
+  }
+}
