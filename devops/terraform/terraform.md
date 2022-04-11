@@ -111,6 +111,14 @@ terraform graph
 ```bash
 terraform console
 ```
+17) show resources from the state file that were deployed
+```bash
+terraform state list
+```
+18) show information on deployed resource
+```bash
+terraform state show <resource_type>.<resource_name>
+```
 
 <hr>
 
