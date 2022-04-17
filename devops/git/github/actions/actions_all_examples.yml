@@ -1,0 +1,155 @@
+name: GitHub Actions Demo
+on: 
+  push:
+    branches: [main]
+    tags: [v1.2.3]
+    # only for javascript files
+    paths: ['**.js']
+    # ignore specific paths
+    paths-ignore: ['test.js']
+  issues:
+    types: [opened]
+jobs:
+  GitHub-Actions-Variables:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - run: echo "eventName is ${{ github.event_name }}"
+      - run: echo "runner os is ${{ runner.os }}"
+      - run: echo "branch name is ${{ github.ref }} 
+      - run: echo "repository is ${{ github.repository }}"
+      - run: echo "file names are `ls ${{ github.workspace }}`"
+      - run: echo "job's status is ${{ job.status }}."
+      - run: echo "this is environment var $ENV_VAR"
+        env:
+          ENV_VAR: "test"
+          CONTAINS_INFO: ${{ contains('HELLO WORLD','LD') }}
+          STARTS: ${{ startsWith('Hello world', 'He') }}
+          ENDS: ${{ endsWith('Hello world', 'ld') }}
+          FORMAT_EXAMPLE: ${{ format('Hello {0} {1} {2}', 'Mona', 'the', 'Octocat') }}
+          JOIN: ${{ join( ['A','B','C'], ',' ) }}
+        if: ${{env.ENV_VAR == 'test'}}
+
+  GitHub-Essential-features:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      
+      - name: run shell script
+        run: ./.github/scripts/run.sh
+
+      - name: run task to save data
+        shell: bash
+        run: expr 1 + 1 > output.log
+
+      - name: Upload output file (used for sharing data between jobs or for later download)
+        uses: actions/upload-artifact@v3
+        with:
+          name: output-log-file
+          path: output.log
+
+      - name: creating a cache (nodejs example)
+        uses: actions/cache@v3
+        with:
+          path: node_modules 
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+          
+  GitHub-Essential-features2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the saved artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: output-log-file
+
+  GitHub-Expressions:
+    runs-on: ubuntu-latest
+    # save output of job
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
+      
+      - name: if condition
+        run: echo "does not suppose to run"
+        if: github.repository == 'does not exist'
+
+      - name: expressions 
+        run: echo "good"
+        # if previous jobs didn't failed (also have always(), failure())
+        if: ${{ success() }} || ${{ job.status == 'success'}} || ${{ github.action_status == 'success'}}
+  
+  GitHub-Expressions2:
+    runs-on: ubuntu-latest
+    # used to define build matrix
+    strategy:
+      # needs means that it depends on that output to run
+      matrix: ${{fromJSON(needs.job1.outputs.matrix)}}
+    steps:
+      - run: build
+
+  GitHub-Contexts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        id: github_context_step
+        run: echo '${{ toJSON(github) }}'
+      - name: Dump job context
+        run: echo '${{ toJSON(job) }}'
+      - name: Dump steps context
+        run: echo '${{ toJSON(steps) }}'
+      - name: Dump runner context
+        run: echo '${{ toJSON(runner) }}'
+      - name: Dump strategy context
+        run: echo '${{ toJSON(strategy) }}'
+      - name: Dump matrix context
+        run: echo '${{ toJSON(matrix) }}'
+
+  GitHub-Syntax-Examples:
+    # runs on multiple versions
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+         os: [ubuntu-18.04, ubuntu-20.04]
+    # grant permissions to job
+    permissions:
+      issues: write
+      pull-requests: write
+    steps: 
+      - run: |
+          import os
+          print(os.environ['PATH'])
+        shell: python
+      - name: using secrets
+        run: echo ${{ secrets.GITHUB_SECRET }}
+
+  GitHub-Syntax-Examples2:
+    # dependent on GitHub-Syntax-Examples job
+    needs: [GitHub-Syntax-Examples]
+    # using container to run job
+    container:
+      image: node:14.16
+      env:
+        NODE_ENV: development
+      ports:
+        - 80
+      volumes:
+        - my_docker_volume:/volume_mount
+      options: --cpus 1
+
+  GitHub-Container-Service-Example:
+    runs-on: ubuntu-latest
+    container: node:10.18-jessie
+    # Service containers to run with the container
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      
