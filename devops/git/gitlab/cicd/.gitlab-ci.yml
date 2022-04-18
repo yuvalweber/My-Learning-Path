@@ -1,3 +1,20 @@
+
+# used to define default behavior
+default:
+  image: gcc:8
+  # using redis service container
+  services:
+    - redis:latest
+
+# include files to execute
+include:
+  - local: '/templates/another.yml'
+
+# used to define pipeline behavior
+workflow:
+  rules:
+    # run if got event of merge_request
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 # used in order to run the jobs inside docker image
 # it pulls the specified image
 image: gcc:9
@@ -33,21 +50,40 @@ build-job:
   artifacts:
     paths:
       - "build/hello"
+    expire_in: 30 days
   # specify when job should run
   rules:
     - if: $CI_COMMIT_REF_NAME == main
 
 test-job:
+  # depends on the status of build-job
+  needs: [build-job]
   stage: test
   script:
     # $CI_PROJECT_DIR is the directory of the project
     - $CI_PROJECT_DIR/build/hello
+  # allow job failure 
+  allow_failure: true
+  # using the artifacts from the build-job
+  dependencies:
+    - "build-job"
+  # run this job couple of times with differenet values
+  parallel:
+    matrix:
+      - PROVIDER: aws
+        STACK:
+          - monitoring
+          - app1
+          - app2
 
 deploy-job:
   stage: deploy 
   script:
     # you can define secret variables in the settings cicd section and call them like variables
     - echo "The Author of this is $AUTHOR, and his secret his $SECRET"
+  # retry 2 times
+  retry: 2
+  
   # run this job only on develop branch
   only:
     - develop
@@ -57,3 +93,9 @@ extend-job:
   # used if the job doing the same thing but for other environment or want to extend something
   # that already exist
   extends: deploy-job
+  # get dependency from another job + artifacts
+  needs:
+    - job: build-job
+      artifacts: true
+  # define environment that this job in
+  environment: production

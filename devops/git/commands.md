@@ -130,3 +130,18 @@ git daemon <options>
 ```
 git clone git://<ip>/<repo>
 ```
+
+26) close issue using commit:
+```bash
+git commit -m "<OPTION>"
+```
+<ins>possible options</ins>
+- fix #xxx
+- fixes #xxx
+- fixed #xxx
+- close #xxx
+- closes #xxx
+- closed #xxx
+- resolve #xxx
+- resolves #xxx
+- resolved #xxx
