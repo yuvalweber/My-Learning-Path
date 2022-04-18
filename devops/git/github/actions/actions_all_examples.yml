@@ -54,7 +54,7 @@ jobs:
         with:
           path: node_modules 
           key: node-modules-${{ hashFiles('package-lock.json') }}
-          
+
   GitHub-Essential-features2:
     runs-on: ubuntu-latest
     steps:
@@ -152,4 +152,38 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       
+  GitHub-Workflow-Commands:
+    runs-on: ubuntu-latest
+    steps:
+      - name: set output command
+        run: echo '::set-output name=SELECTED_COLOR::green'
+        id: random-color-generator
+      - name: Get color
+        run: echo "The selected color is ${{ steps.random-color-generator.outputs.SELECTED_COLOR }}"
+
+      - name: set debug message (if debugging enabled)
+        run: echo "::debug::Set the Octocat variable"
       
+      - name: setting notice message inside file
+        run: echo "::notice file=app.js,line=1,col=5,endColumn=7::Missing semicolon"
+
+      - name: setting warning message inside file
+        run: echo "::warning file=app.js,line=1,col=5,endColumn=7::Missing semicolon"
+
+      - name: setting error message inside file
+        run: echo "::error file=app.js,line=1,col=5,endColumn=7::Missing semicolon"
+
+      - name: group logging
+        run: |
+            echo "::group::My title"
+            echo "Inside group"
+            echo "::endgroup::"
+
+      - name: masking value in log
+        run: echo "::add-mask::Mona The Octocat"
+
+      - name: setting environment variable 
+        run: echo "{environment_variable_name}={value}" >> $GITHUB_ENV
+
+      - name: setting path variable 
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
