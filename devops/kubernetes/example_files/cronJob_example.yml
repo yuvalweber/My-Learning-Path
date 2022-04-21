@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronjob-example
+spec:
+  # cron like expression
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+    # runs until 4 successful jobs
+    completions: 4
+    # max 2 in parallel
+    parallelism: 2
+    template:
+      spec:
+        containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+        restartPolicy: Never

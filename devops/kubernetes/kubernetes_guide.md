@@ -378,3 +378,11 @@ kubectl get nodes -o=custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu
 ```
 kubectl get nodes --sort-by=.status.capacity.cpu
 ```
+55) delete kubernetes job
+```
+kubectl delete job <job_name>
+```
+56) list cronjobs
+```
+kubectl get cronjob
+```

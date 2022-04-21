@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mystatefulset
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  # used if we want the pods to create in parallel
+  podManagementPolicy: Parallel
+  # points to headless service
+  serviceName: custom-service
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: k8s.gcr.io/nginx-slim:0.8
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+  # used to create its own pvcs
+  volumeClaimTemplates:
+  - metadata:
+      name: www
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

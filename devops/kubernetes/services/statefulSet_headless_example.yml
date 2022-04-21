@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysqlstateful
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  serviceName: headless-service
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: mysql:latest
+        ports:
+        - containerPort: 3306
+          name: db

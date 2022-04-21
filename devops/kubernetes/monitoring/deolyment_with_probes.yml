@@ -14,6 +14,14 @@ spec:
       containers:
       - name: myapp
         image: apache-custom
+        # checks when container ready
+        readinessProbe:
+          httpGet:
+            path: "/healthz"
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        # check whether container should stay alive
         livenessProbe:
           exec:
             command:

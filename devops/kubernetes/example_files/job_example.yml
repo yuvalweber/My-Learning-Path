@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: myjob
+spec:
+  ttlSecondsAfterFinished: 100
+  # runs until 4 successful jobs
+  completions: 4
+  # max 2 in parallel
+  parallelism: 2
+  # number of retries
+  backoffLimit: 10
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: Never
