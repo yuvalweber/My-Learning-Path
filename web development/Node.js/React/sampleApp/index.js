@@ -1,10 +1,5 @@
 import React from 'react';
-import  ReactDOM  from 'react';
-import './style.css'
+import  ReactDOM  from 'react-dom';
+import App from './App'
 
-const name = "yuval";
-
-ReactDOM.render(<div>
-    <p className='testingCss'>this is example by: {name}</p>
-    <p style={{color: "red"}}>this is red</p>
-</div>,document.getElementById("root"));
+ReactDOM.render(<App />,document.getElementById("root"));
