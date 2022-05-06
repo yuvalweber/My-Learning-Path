@@ -386,3 +386,11 @@ kubectl delete job <job_name>
 ```
 kubectl get cronjob
 ```
+57) debug container using ephermal container
+```
+kubectl debug -it <pod_name> --image=busybox:1.28 --target=<container_name>
+```
+58) upgrade manifest api version to latest
+```
+kubectl convert -f <yaml file>
+```

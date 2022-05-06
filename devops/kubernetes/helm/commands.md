@@ -1,7 +1,7 @@
 # commands
 1) install a package
 ```bash
-helm install <package>
+helm install <release> <package>
 ```
 2) upgrade a packge
 ```bash
@@ -38,4 +38,14 @@ helm list
 10) download helm chart without installing
 ```bash
 helm pull --untar <repo>/<package>
+```
+
+11) show helm values
+```bash
+helm show values <repo>/<package>
+```
+
+12) install packages with values.yml
+```bash
+helm install <release> <package> -f values.yml
 ```
