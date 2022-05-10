@@ -1,11 +1,15 @@
-import React from 'react';
+import React, {useState} from 'react';
 import './style.css'
 import Card from './Components/Card'
 import sampleCards from './samples'
 
-const name = "yuval";
+
 
 const App = () => {
+  const [name,setName] = useState("yuval");
+  const changeName = newName => {
+    setName(newName);
+  }
     return (
     <div>
       <p className='testingCss'>this is example by: {name}</p>
@@ -18,7 +22,6 @@ const App = () => {
         p2= {sampleCard.p2}
         />
       })}
-
     </div>
     )
 }
