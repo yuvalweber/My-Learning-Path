@@ -77,8 +77,10 @@ int decode_mmap(int pid,char* buffer,struct user_regs_struct *regs, struct sysca
 }
 int decode_mprotect(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
+    char* protections = decode_mprotect_flags(regs->rdx);
+    snprintf(buffer,4096,"%s(0x%llx,%llu,%s)",entry->name,regs->rdi,regs->rsi,protections);
+    free(protections);
+	return IMPLEMENTED;
 }
 int decode_munmap(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
@@ -875,8 +877,30 @@ int decode_prctl(int pid,char* buffer,struct user_regs_struct *regs, struct sysc
 }
 int decode_arch_prctl(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
+    char *code;
+    switch(regs->rdi)
+    {
+        case ARCH_SET_CPUID:
+            code = STRINGIFY(ARCH_SET_CPUID);
+            break;
+        case ARCH_GET_CPUID:
+            code = STRINGIFY(ARCH_GET_CPUID);
+            break;
+        case ARCH_SET_FS:
+            code = STRINGIFY(ARCH_SET_FS);
+            break;
+        case ARCH_GET_FS:
+            code = STRINGIFY(ARCH_GET_FS);
+            break;
+        case ARCH_SET_GS:
+            code = STRINGIFY(ARCH_SET_GS);
+            break;
+        case ARCH_GET_GS:
+            code = STRINGIFY(ARCH_GET_GS);
+            break;
+    }
+    snprintf(buffer,4096,"%s(%s,0x%llx)",entry->name,code,regs->rsi);
+	return IMPLEMENTED;
 }
 int decode_adjtimex64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
@@ -1705,7 +1729,7 @@ int decode_pwritev2(int pid,char* buffer,struct user_regs_struct *regs, struct s
 }
 int decode_pkey_mprotect(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
+    snprintf(buffer,4096,"%s(0x%llx,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
 int decode_pkey_alloc(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)

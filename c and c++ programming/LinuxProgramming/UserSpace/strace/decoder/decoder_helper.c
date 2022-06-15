@@ -5,7 +5,6 @@
 #include <sys/uio.h>
 #include <sys/types.h>
 #include <ctype.h>
-#include <stdlib.h>
 #include <string.h>
 #include "decoder_helper.h"
 int i;
@@ -66,4 +65,84 @@ void unescape_string(char* buffer,unsigned length)
         }
     }
     strcpy(buffer,temp_buffer);
+}
+
+char* decode_mprotect_flags(int prot)
+{
+    char access[77] = {""};
+    int flag = 0;
+
+    if(prot == PROT_NONE)
+    {
+        strcat(access,STRINGIFY(PROT_NONE));
+    }
+    else
+    {
+        if(prot & PROT_READ)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(PROT_READ));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");
+                strcat(access,STRINGIFY(PROT_READ));
+            }
+        }
+        if(prot & PROT_WRITE)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(PROT_WRITE));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");   
+                strcat(access,STRINGIFY(PROT_WRITE));
+            }
+        }
+        if(prot & PROT_EXEC)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(PROT_EXEC));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");  
+                strcat(access,STRINGIFY(PROT_EXEC));
+            }
+        }
+        if(prot & PROT_GROWSUP)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(PROT_GROWSUP));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");  
+                strcat(access,STRINGIFY(PROT_GROWSUP));
+            }
+        }
+        if(prot & PROT_GROWSDOWN)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(PROT_GROWSDOWN));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");  
+                strcat(access,STRINGIFY(PROT_GROWSDOWN));
+            }
+        }
+    }
+    return strdup(access);
 }
