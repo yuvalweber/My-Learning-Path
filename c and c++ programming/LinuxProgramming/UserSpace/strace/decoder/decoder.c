@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <limits.h>
+
 #define IMPLEMENTED 0 
 #define NOT_IMPLEMENTED 1
 
@@ -80,8 +82,8 @@ int decode_mprotect(int pid,char* buffer,struct user_regs_struct *regs, struct s
 }
 int decode_munmap(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
+    snprintf(buffer,4096,"%s(0x%llx,%llu)",entry->name,regs->rdi,regs->rsi);
+	return IMPLEMENTED;
 }
 int decode_brk(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
@@ -137,8 +139,59 @@ int decode_writev(int pid,char* buffer,struct user_regs_struct *regs, struct sys
 }
 int decode_access(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
+    char access[15] = {""};
+    int flag = 0;
+    int number = regs->rsi;
+
+    if(number == F_OK)
+    {
+        strcat(access,STRINGIFY(F_OK));
+    }
+    else
+    {
+        if(number & R_OK)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(R_OK));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");
+                strcat(access,STRINGIFY(R_OK));
+            }
+        }
+        if(number & W_OK)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(W_OK));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");   
+                strcat(access,STRINGIFY(W_OK));
+            }
+        }
+        if(number & X_OK)
+        {
+            if(!flag)
+            {
+                strcat(access,STRINGIFY(X_OK));
+                flag = 1;
+            }
+            else
+            {
+                strcat(access,"|");  
+                strcat(access,STRINGIFY(X_OK));
+            }
+        }
+    }
+    read_memory(pid,(void *)regs->rdi,(size_t)PATH_MAX,memory_buffer);
+    snprintf(buffer,4096,"%s(\"%s\", %s)",entry->name,memory_buffer,access);
+	return IMPLEMENTED;
 }
 int decode_pipe(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
@@ -334,6 +387,11 @@ int decode_exit(int pid,char* buffer,struct user_regs_struct *regs, struct sysca
 {
     snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
+}
+int decode_exit_group(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
+{
+    snprintf(buffer,4096,"%s(%llu)",entry->name,regs->rdi);
+	return IMPLEMENTED;
 }
 int decode_wait4(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
@@ -1097,8 +1155,8 @@ int decode_geents64(int pid,char* buffer,struct user_regs_struct *regs, struct s
 }
 int decode_set_tid_address(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
+    snprintf(buffer,4096,"%s(0x%llx)",entry->name,regs->rdi);
+	return IMPLEMENTED;
 }
 int decode_restart_syscall(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
@@ -1367,8 +1425,8 @@ int decode_unshare(int pid,char* buffer,struct user_regs_struct *regs, struct sy
 }
 int decode_set_robust_list(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
-	return NOT_IMPLEMENTED;
+    snprintf(buffer,4096,"%s(0x%llx,%llu)",entry->name,regs->rdi,regs->rsi);
+	return IMPLEMENTED;
 }
 int decode_get_robust_list(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {

@@ -229,7 +229,7 @@
 [228]={2,decode_clock_gettime64,"clock_gettime"},
 [229]={2,decode_clock_getres_time64,"clock_getres"},
 [230]={4,decode_clock_nanosleep_time64,"clock_nanosleep"},
-[231]={1,decode_exit,"exit_group"},
+[231]={1,decode_exit_group,"exit_group"},
 [232]={4,decode_epoll_wait,"epoll_wait"},
 [233]={4,decode_epoll_ctl,"epoll_ctl"},
 [234]={3,decode_tgkill,"tgkill"},

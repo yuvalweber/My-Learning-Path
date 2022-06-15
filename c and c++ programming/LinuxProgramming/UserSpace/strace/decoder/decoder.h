@@ -64,6 +64,7 @@ int decode_fork(int pid,char* buffer,struct user_regs_struct *regs, struct sysca
 int decode_vfork(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry);
 int decode_execve(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry);
 int decode_exit(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry);
+int decode_exit_group(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry);
 int decode_wait4(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry);
 int decode_kill(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry);
 int decode_uname(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry);
