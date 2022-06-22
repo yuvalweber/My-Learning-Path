@@ -1099,7 +1099,7 @@ int decode_time(int pid,char* buffer,struct user_regs_struct *regs, struct sysca
 }
 int decode_futex_time64(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
+    snprintf(buffer,4096,"%s(0x%llx,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
 	return NOT_IMPLEMENTED;
 }
 int decode_sched_setaffinity(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
@@ -1369,7 +1369,11 @@ int decode_migrate_pages(int pid,char* buffer,struct user_regs_struct *regs, str
 }
 int decode_openat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
 {
-    snprintf(buffer,4096,"%s(%llu,%llu,%llu)",entry->name,regs->rdi,regs->rsi,regs->rdx);
+    char *isCWD = malloc(sizeof(char) * 10);
+    (unsigned)regs->rdi == AT_FDCWD ? snprintf(isCWD,10,"%s","AT_FDCWD") : snprintf(isCWD,10,"%lld",regs->rdi);
+    read_memory(pid,(void *)regs->rsi,(size_t)PATH_MAX,memory_buffer);
+    snprintf(buffer,4096,"%s(%s,\"%s\",%llu)",entry->name,isCWD,memory_buffer,regs->rdx);
+    free(isCWD);
 	return NOT_IMPLEMENTED;
 }
 int decode_mkdirat(int pid,char* buffer,struct user_regs_struct *regs, struct syscall *entry)
