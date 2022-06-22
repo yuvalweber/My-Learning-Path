@@ -12,7 +12,7 @@ int i;
 int read_memory(int pid,void* memory_address,size_t length,char* memory_buffer)
 {
     struct iovec local[1];
-    local[0].iov_base = calloc(length, sizeof(char));
+    local[0].iov_base = calloc(length+1, sizeof(char));
     local[0].iov_len = length;
 
     struct iovec remote[1];

@@ -16,7 +16,7 @@ char* isInPath(char* program_name)
 {
     char* path = getenv("PATH");
     char* splittedPath = strtok(path,":");
-    char* path_to_check = malloc(sizeof(char*));
+    char* path_to_check = malloc(4096);
     FILE* file;
     while(splittedPath != NULL)
     {

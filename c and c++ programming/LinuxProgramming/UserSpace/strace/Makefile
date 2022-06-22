@@ -1,5 +1,5 @@
 my_strace: strace.o helperFunctions.o decoder.o decoder_helper.o
-	gcc -g -Wall -Werror -o my_strace strace.o helperFunctions.o decoder.o decoder_helper.o
+	gcc -ggdb3 -Wall -Werror -o my_strace strace.o helperFunctions.o decoder.o decoder_helper.o
 
 decoder.o: ./decoder/decoder.c
 	gcc -c ./decoder/decoder.c -o decoder.o
